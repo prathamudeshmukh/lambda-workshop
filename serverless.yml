@@ -16,17 +16,18 @@ service: lambda-test
 provider:
   name: aws
   runtime: nodejs12.x
+  region: eu-west-2
+  tracing:
+    lambda: true
+    apiGateway: true
+  versionFunctions: false
   environment:
-    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    DYNAMODB_TABLE: todos
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - dynamodb:Query
         - dynamodb:Scan
-        - dynamodb:GetItem
         - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 functions:
@@ -46,18 +47,15 @@ functions:
 resources:
   Resources:
     TodosDynamoDbTable:
-      Type: 'AWS::DynamoDB::Table'
-      DeletionPolicy: Retain
+      Type: AWS::DynamoDB::Table
       Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: id
-            AttributeType: S
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
         KeySchema:
-          -
-            AttributeName: id
+          - AttributeName: id
             KeyType: HASH
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.DYNAMODB_TABLE}
